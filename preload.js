@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('trsAPI', {
   // Bills
   getBills: () => ipcRenderer.invoke('get-bills'),
   createBill: (bill, items) => ipcRenderer.invoke('create-bill', bill, items),
+  updateBill: (billId, items) => ipcRenderer.invoke('update-bill', billId, items),
   togglePaid: (id, paid) => ipcRenderer.invoke('toggle-paid', id, paid),
   deleteBill: (id) => ipcRenderer.invoke('delete-bill', id),
 

@@ -14,7 +14,8 @@ const EMPTY = { category: CATEGORIES[0], amount: '', note: '', date: new Date().
 const fmt = n => Number(n || 0).toLocaleString('ja-JP')
 
 function currentYearMonth() {
-  return new Date().toISOString().slice(0, 7)
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
 function monthLabel(ym) {

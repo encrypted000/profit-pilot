@@ -128,7 +128,7 @@ if (count.c === 0) {
 
 // ── PRODUCT QUERIES ──────────────────────────────────────────────────────────
 function getAllProducts() {
-  return db.prepare('SELECT * FROM products ORDER BY name').all()
+  return db.prepare('SELECT * FROM products ORDER BY id DESC').all()
 }
 
 function addProduct(data) {
@@ -242,13 +242,49 @@ function getCustomerOutstanding(customerName) {
   return { total_due: result.total_due, bill_count: result.bill_count }
 }
 
+function updateBill(billId, newItems) {
+  const transaction = db.transaction(() => {
+    // Restore stock for all existing items before replacing
+    const oldItems = db.prepare('SELECT * FROM bill_items WHERE bill_id=?').all(billId)
+    oldItems.forEach(item => {
+      if (item.product_id) {
+        db.prepare('UPDATE products SET stock = stock + ? WHERE id=?').run(item.quantity, item.product_id)
+      }
+    })
+    // Replace items
+    db.prepare('DELETE FROM bill_items WHERE bill_id=?').run(billId)
+    const insertItem = db.prepare(`
+      INSERT INTO bill_items (bill_id, product_id, product_name, quantity, unit_price, total)
+      VALUES (@bill_id, @product_id, @product_name, @quantity, @unit_price, @total)
+    `)
+    let newSubTotal = 0
+    newItems.forEach(item => {
+      const qty   = parseFloat(item.quantity)  || 0
+      const price = parseFloat(item.unit_price) || 0
+      const total = qty * price
+      insertItem.run({ ...item, bill_id: billId, quantity: qty, unit_price: price, total })
+      newSubTotal += total
+      if (item.product_id) adjustStock(item.product_id, qty)
+    })
+    // Recalculate bill totals
+    const bill = db.prepare('SELECT * FROM bills WHERE id=?').get(billId)
+    const newGrandTotal = newSubTotal + (bill.previous_due || 0)
+    const newAmountPaid = Math.min(bill.amount_paid || 0, newGrandTotal)
+    const isPaid = newAmountPaid >= newGrandTotal ? 1 : 0
+    db.prepare('UPDATE bills SET sub_total=?, grand_total=?, amount_paid=?, paid=? WHERE id=?')
+      .run(newSubTotal, newGrandTotal, newAmountPaid, isPaid, billId)
+  })
+  return transaction()
+}
+
 function deleteBill(id) {
   db.prepare('DELETE FROM bills WHERE id=?').run(id)
 }
 
 // ── DASHBOARD STATS ──────────────────────────────────────────────────────────
 function getDashboardStats() {
-  const currentMonth = new Date().toISOString().slice(0, 7)
+  const _now = new Date()
+  const currentMonth = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`
 
   // All-time revenue & cost (from product sales only)
   const revenue = db.prepare(`
@@ -487,7 +523,7 @@ function deleteExpense(id) {
 
 module.exports = {
   getAllProducts, addProduct, updateProduct, deleteProduct,
-  getAllBills, createBill, toggleBillPaid, recordPayment, deleteBill,
+  getAllBills, createBill, updateBill, toggleBillPaid, recordPayment, deleteBill,
   getCustomerOutstanding,
   getDashboardStats,
   getAllCustomers, addCustomer, updateCustomer, deleteCustomer, payOpeningBalance,

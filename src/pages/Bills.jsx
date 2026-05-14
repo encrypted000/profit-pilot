@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Fragment } from 'react'
 
 const COMPANY = {
   name:    'TRS TRAVEL & TOURS PRIVATE LIMITED',
@@ -46,13 +46,13 @@ function PrintView({ bill, onClose }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             {/* Left: logo + address */}
             <div>
-              <div style={{ fontSize: 42, fontWeight: 900, color: '#0f2557', letterSpacing: 3, lineHeight: 1, marginBottom: 6 }}>TRS</div>
+              <div style={{ fontSize: 42, fontWeight: 900, color: '#000', letterSpacing: 3, lineHeight: 1, marginBottom: 6 }}>TRS</div>
               <div style={{ fontSize: 10.5, color: '#333', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{COMPANY.address}</div>
               <div style={{ fontSize: 10.5, color: '#333', marginTop: 2 }}>☎ {COMPANY.phone}</div>
             </div>
             {/* Right: company name + invoice meta */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: 800, fontSize: 13, color: '#0f2557', marginBottom: 8 }}>{COMPANY.name}</div>
+              <div style={{ fontWeight: 800, fontSize: 13, color: '#000', marginBottom: 8 }}>{COMPANY.name}</div>
               <table style={{ fontSize: 11, marginLeft: 'auto', borderCollapse: 'collapse' }}>
                 <tbody>
                   <tr>
@@ -75,48 +75,48 @@ function PrintView({ bill, onClose }) {
           {/* ── TAX INVOICE banner ── */}
           <div style={{
             textAlign: 'center', fontWeight: 800, fontSize: 16, letterSpacing: 2,
-            borderTop: '2.5px solid #0f2557', borderBottom: '2.5px solid #0f2557',
-            padding: '6px 0', margin: '0 0 14px', color: '#0f2557',
+            borderTop: '2.5px solid #000', borderBottom: '2.5px solid #000',
+            padding: '6px 0', margin: '0 0 14px', color: '#000',
           }}>
             TAX INVOICE
           </div>
 
           {/* ── Bill To ── */}
-          <div style={{ marginBottom: 14, padding: '10px 14px', background: '#f7f8fc', borderRadius: 6, border: '1px solid #e0e4f0' }}>
+          <div style={{ marginBottom: 14, padding: '10px 14px', background: '#f5f5f5', borderRadius: 6, border: '1px solid #ccc' }}>
             <div style={{ fontWeight: 700, fontSize: 10.5, color: '#555', letterSpacing: 0.5, marginBottom: 5, textTransform: 'uppercase' }}>Bill To</div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: '#0f2557' }}>{bill.customer_name}</div>
-            {bill.customer_address && <div style={{ fontSize: 11, color: '#444', marginTop: 2 }}>〒 {bill.customer_address}</div>}
-            {bill.customer_phone   && <div style={{ fontSize: 11, color: '#444', marginTop: 1 }}>☎ {bill.customer_phone}</div>}
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#000' }}>{bill.customer_name}</div>
+            {bill.customer_address && <div style={{ fontSize: 11, color: '#333', marginTop: 2 }}>〒 {bill.customer_address}</div>}
+            {bill.customer_phone   && <div style={{ fontSize: 11, color: '#333', marginTop: 1 }}>☎ {bill.customer_phone}</div>}
           </div>
 
           {/* ── Items table ── */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16, fontSize: 11.5 }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #0f2557' }}>
-                <th style={{ padding: '7px 8px', textAlign: 'center', width: 36, color: '#0f2557', fontSize: 10.5 }}>S/N</th>
-                <th style={{ padding: '7px 8px', textAlign: 'left', color: '#0f2557', fontSize: 10.5 }}>PRODUCT DETAILS</th>
-                <th style={{ padding: '7px 8px', textAlign: 'right', width: 80, color: '#0f2557', fontSize: 10.5 }}>QTY</th>
-                <th style={{ padding: '7px 8px', textAlign: 'right', width: 90, color: '#0f2557', fontSize: 10.5 }}>UNIT PRICE</th>
-                <th style={{ padding: '7px 8px', textAlign: 'right', width: 90, color: '#0f2557', fontSize: 10.5 }}>TOTAL</th>
+              <tr style={{ borderBottom: '2px solid #000' }}>
+                <th style={{ padding: '7px 8px', textAlign: 'center', width: 36, color: '#000', fontSize: 10.5 }}>S/N</th>
+                <th style={{ padding: '7px 8px', textAlign: 'left', color: '#000', fontSize: 10.5 }}>PRODUCT DETAILS</th>
+                <th style={{ padding: '7px 8px', textAlign: 'right', width: 80, color: '#000', fontSize: 10.5 }}>QTY</th>
+                <th style={{ padding: '7px 8px', textAlign: 'right', width: 90, color: '#000', fontSize: 10.5 }}>UNIT PRICE</th>
+                <th style={{ padding: '7px 8px', textAlign: 'right', width: 90, color: '#000', fontSize: 10.5 }}>TOTAL</th>
               </tr>
             </thead>
             <tbody>
               {bill.items.map((item, i) => (
                 <tr key={i}>
-                  <td style={{ border: '1px solid #dde', padding: '6px 8px', textAlign: 'center', color: '#555' }}>{i + 1}</td>
-                  <td style={{ border: '1px solid #dde', padding: '6px 8px' }}>{item.product_name}</td>
-                  <td style={{ border: '1px solid #dde', padding: '6px 8px', textAlign: 'right' }}>{fmt(item.quantity)}</td>
-                  <td style={{ border: '1px solid #dde', padding: '6px 8px', textAlign: 'right' }}>{fmt(item.unit_price)}</td>
-                  <td style={{ border: '1px solid #dde', padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(item.total)}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'center', color: '#333' }}>{i + 1}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px' }}>{item.product_name}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'right' }}>{fmt(item.quantity)}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'right' }}>{fmt(item.unit_price)}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(item.total)}</td>
                 </tr>
               ))}
               {Array.from({ length: emptyRows }).map((_, i) => (
                 <tr key={`e${i}`}>
-                  <td style={{ border: '1px solid #dde', padding: '12px 8px' }}>&nbsp;</td>
-                  <td style={{ border: '1px solid #dde', padding: '12px 8px' }}></td>
-                  <td style={{ border: '1px solid #dde', padding: '12px 8px' }}></td>
-                  <td style={{ border: '1px solid #dde', padding: '12px 8px' }}></td>
-                  <td style={{ border: '1px solid #dde', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}>&nbsp;</td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
                 </tr>
               ))}
             </tbody>
@@ -126,8 +126,8 @@ function PrintView({ bill, onClose }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20 }}>
             {/* Left: thank you + bank */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 6, color: '#0f2557' }}>THANK YOU FOR YOUR BUSINESS...!</div>
-              <div style={{ fontSize: 10, color: '#444', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{COMPANY.bank}</div>
+              <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 6, color: '#000' }}>THANK YOU FOR YOUR BUSINESS...!</div>
+              <div style={{ fontSize: 10, color: '#333', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{COMPANY.bank}</div>
             </div>
 
             {/* Right: totals */}
@@ -140,33 +140,33 @@ function PrintView({ bill, onClose }) {
                   </tr>
                   {bill.discount > 0 && (
                     <tr>
-                      <td style={{ padding: '5px 12px', color: '#16a34a' }}>DISCOUNT</td>
-                      <td style={{ textAlign: 'right', padding: '5px 12px', color: '#16a34a' }}>- ¥{fmt(bill.discount)}</td>
+                      <td style={{ padding: '5px 12px' }}>DISCOUNT</td>
+                      <td style={{ textAlign: 'right', padding: '5px 12px' }}>- ¥{fmt(bill.discount)}</td>
                     </tr>
                   )}
                   {(bill.previous_due || 0) > 0 && (
                     <tr>
-                      <td style={{ padding: '5px 12px', color: '#d97706', fontWeight: 700 }}>PREVIOUS DUE</td>
-                      <td style={{ textAlign: 'right', padding: '5px 12px', color: '#d97706', fontWeight: 700 }}>+ ¥{fmt(bill.previous_due)}</td>
+                      <td style={{ padding: '5px 12px', fontWeight: 700 }}>PREVIOUS DUE</td>
+                      <td style={{ textAlign: 'right', padding: '5px 12px', fontWeight: 700 }}>+ ¥{fmt(bill.previous_due)}</td>
                     </tr>
                   )}
                   {(bill.previous_due || 0) > 0 && (
-                    <tr style={{ borderTop: '1px solid #dde' }}>
+                    <tr style={{ borderTop: '1px solid #bbb' }}>
                       <td style={{ padding: '5px 12px', fontWeight: 700 }}>GRAND TOTAL</td>
                       <td style={{ textAlign: 'right', padding: '5px 12px', fontWeight: 700 }}>¥{fmt(bill.grand_total)}</td>
                     </tr>
                   )}
                   {(bill.amount_paid || 0) > 0 && (
                     <tr>
-                      <td style={{ padding: '5px 12px', color: '#16a34a', fontWeight: 700 }}>PAID</td>
-                      <td style={{ textAlign: 'right', padding: '5px 12px', color: '#16a34a', fontWeight: 700 }}>- ¥{fmt(bill.amount_paid)}</td>
+                      <td style={{ padding: '5px 12px', fontWeight: 700 }}>PAID</td>
+                      <td style={{ textAlign: 'right', padding: '5px 12px', fontWeight: 700 }}>- ¥{fmt(bill.amount_paid)}</td>
                     </tr>
                   )}
-                  <tr style={{ borderTop: '2px solid #0f2557' }}>
-                    <td style={{ padding: '8px 12px', fontWeight: 800, fontSize: 13, color: '#0f2557' }}>
+                  <tr style={{ borderTop: '2px solid #000' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 800, fontSize: 13, color: '#000' }}>
                       {(bill.amount_paid || 0) > 0 ? 'BALANCE DUE' : 'GRAND TOTAL'}
                     </td>
-                    <td style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 800, fontSize: 13, color: '#0f2557' }}>
+                    <td style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 800, fontSize: 13, color: '#000' }}>
                       ¥{fmt(bill.grand_total - (bill.amount_paid || 0))}
                     </td>
                   </tr>
@@ -229,6 +229,117 @@ function PaymentPanel({ bill, onDone }) {
   )
 }
 
+// ── Edit Panel ────────────────────────────────────────────────────────────────
+function EditPanel({ bill, onDone, onCancel }) {
+  const [products, setProducts] = useState([])
+  const [items, setItems]       = useState(bill.items.map(i => ({ ...i })))
+  const [saving, setSaving]     = useState(false)
+
+  useEffect(() => { window.trsAPI.getProducts().then(setProducts) }, [])
+
+  function addItem() {
+    if (!products.length) return
+    const p = products[0]
+    setItems(prev => [...prev, {
+      product_id: p.id, product_name: p.name,
+      quantity: 1, unit_price: p.cost_price, total: p.cost_price,
+    }])
+  }
+
+  function removeItem(idx) {
+    setItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  function updateItem(idx, field, raw) {
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item
+      const updated = { ...item, [field]: raw }
+      if (field === 'product_id') {
+        const p = products.find(p => p.id === parseInt(raw))
+        if (p) {
+          updated.product_name = p.name
+          updated.unit_price   = p.cost_price
+          updated.total        = p.cost_price * (parseFloat(updated.quantity) || 1)
+        }
+      }
+      if (field === 'quantity' || field === 'unit_price') {
+        updated.total = (parseFloat(updated.quantity) || 0) * (parseFloat(updated.unit_price) || 0)
+      }
+      return updated
+    }))
+  }
+
+  const subTotal = items.reduce((s, i) => s + (i.total || 0), 0)
+
+  async function save() {
+    if (!items.length) return
+    setSaving(true)
+    await window.trsAPI.updateBill(bill.id, items)
+    setSaving(false)
+    onDone()
+  }
+
+  return (
+    <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '16px 20px', marginTop: 4 }}>
+      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 12, color: 'var(--navy)' }}>
+        ✏️ Edit Items — {bill.bill_number}
+      </div>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 12, fontSize: 12 }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: 'left', padding: '4px 6px', color: 'var(--muted)', fontWeight: 600 }}>Product</th>
+            <th style={{ textAlign: 'right', padding: '4px 6px', width: 80, color: 'var(--muted)', fontWeight: 600 }}>Qty</th>
+            <th style={{ textAlign: 'right', padding: '4px 6px', width: 110, color: 'var(--muted)', fontWeight: 600 }}>Unit Price</th>
+            <th style={{ textAlign: 'right', padding: '4px 6px', width: 100, color: 'var(--muted)', fontWeight: 600 }}>Total</th>
+            <th style={{ width: 36 }}></th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item, idx) => (
+            <tr key={idx}>
+              <td style={{ padding: '4px 6px' }}>
+                <select className="form-control" style={{ fontSize: 12 }}
+                  value={item.product_id || ''}
+                  onChange={e => updateItem(idx, 'product_id', e.target.value)}>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </td>
+              <td style={{ padding: '4px 6px' }}>
+                <input className="form-control" type="number" min="1" step="1"
+                  style={{ width: 72, textAlign: 'right', fontSize: 12 }}
+                  value={item.quantity}
+                  onChange={e => updateItem(idx, 'quantity', e.target.value)} />
+              </td>
+              <td style={{ padding: '4px 6px' }}>
+                <input className="form-control" type="number" min="0" step="1"
+                  style={{ width: 100, textAlign: 'right', fontSize: 12 }}
+                  value={item.unit_price}
+                  onChange={e => updateItem(idx, 'unit_price', e.target.value)} />
+              </td>
+              <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 600 }}>¥{fmt(item.total)}</td>
+              <td style={{ padding: '4px 6px' }}>
+                <button className="btn btn-sm"
+                  style={{ background: '#fee2e2', color: 'var(--red)', border: '1px solid #fecaca', padding: '2px 8px' }}
+                  onClick={() => removeItem(idx)}>×</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button className="btn btn-ghost btn-sm" onClick={addItem}>+ Add Item</button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>Sub Total: ¥{fmt(subTotal)}</span>
+          <button className="btn btn-ghost btn-sm" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-primary btn-sm" disabled={saving || !items.length} onClick={save}>
+            {saving ? 'Saving...' : '✓ Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Bills List ────────────────────────────────────────────────────────────────
 export default function Bills({ onNewBill }) {
   const [bills, setBills]         = useState([])
@@ -238,6 +349,7 @@ export default function Bills({ onNewBill }) {
   const [dateTo, setDateTo]       = useState('')
   const [printBill, setPrintBill] = useState(null)
   const [payingId, setPayingId]   = useState(null)
+  const [editingId, setEditingId] = useState(null)
 
   useEffect(() => { load() }, [])
 
@@ -393,7 +505,7 @@ export default function Bills({ onNewBill }) {
                     ? { background: '#fffdf0' }
                     : {}
                 return (
-                  <>
+                  <Fragment key={bill.id}>
                     <tr key={bill.id} style={rowStyle}>
                       <td style={{ fontWeight: 700, color: isOB ? 'var(--amber)' : isRF ? 'var(--muted)' : 'var(--blue)' }}>
                         {isOB
@@ -429,8 +541,14 @@ export default function Bills({ onNewBill }) {
                           {!bill.paid && !isRF && (
                             <button className="btn btn-sm"
                               style={{ background: '#dcfce7', color: 'var(--green)', border: '1px solid #bbf7d0' }}
-                              onClick={() => setPayingId(payingId === bill.id ? null : bill.id)}>
+                              onClick={() => { setEditingId(null); setPayingId(payingId === bill.id ? null : bill.id) }}>
                               💰 Pay
+                            </button>
+                          )}
+                          {!isOB && !isRF && (
+                            <button className="btn btn-ghost btn-sm"
+                              onClick={() => { setPayingId(null); setEditingId(editingId === bill.id ? null : bill.id) }}>
+                              ✏️ Edit
                             </button>
                           )}
                           {!isOB && !isRF && <button className="btn btn-ghost btn-sm" onClick={() => setPrintBill(bill)}>🖨️</button>}
@@ -449,7 +567,16 @@ export default function Bills({ onNewBill }) {
                         </td>
                       </tr>
                     )}
-                  </>
+                    {editingId === bill.id && (
+                      <tr key={`edit-${bill.id}`}>
+                        <td colSpan={8} style={{ padding: '0 16px 12px', background: '#f0f9ff' }}>
+                          <EditPanel bill={bill}
+                            onDone={() => { setEditingId(null); load() }}
+                            onCancel={() => setEditingId(null)} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 )
               })}
             </tbody>

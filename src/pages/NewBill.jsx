@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 
+function localToday() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function NewBill({ onSaved }) {
   const [products, setProducts]     = useState([])
   const [customers, setCustomers]   = useState([])
@@ -10,7 +15,7 @@ export default function NewBill({ onSaved }) {
   const [items, setItems]           = useState([])
   const [discount, setDiscount]     = useState(0)
   const [paidToday, setPaidToday]   = useState('')
-  const [billDate, setBillDate]     = useState(new Date().toISOString().split('T')[0])
+  const [billDate, setBillDate]     = useState(localToday())
   const [selProd, setSelProd]       = useState('')
   const [selQty, setSelQty]         = useState(1)
   const [selPrice, setSelPrice]     = useState('')
@@ -122,8 +127,10 @@ export default function NewBill({ onSaved }) {
 
     setSaving(true)
     const bills = await window.trsAPI.getBills()
-    const invoiceCount = bills.filter(b => b.bill_type !== 'opening_balance').length
-    const nextNum = String(invoiceCount + 1).padStart(3, '0')
+    const maxNum = bills
+      .filter(b => /^INV-\d+$/.test(b.bill_number))
+      .reduce((max, b) => Math.max(max, parseInt(b.bill_number.slice(4), 10)), 0)
+    const nextNum = String(maxNum + 1).padStart(3, '0')
 
     const billData = {
       bill_number: `INV-${nextNum}`,

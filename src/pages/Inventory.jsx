@@ -52,6 +52,7 @@ export default function Inventory() {
     } else {
       await window.trsAPI.addProduct(data)
       flash(`"${data.name}" added to inventory.`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
     setForm(EMPTY)
     setEditId(null)

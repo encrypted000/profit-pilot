@@ -54,6 +54,7 @@ ipcMain.handle('delete-product', (_, id) => db.deleteProduct(id))
 
 ipcMain.handle('get-bills', () => db.getAllBills())
 ipcMain.handle('create-bill', (_, bill, items) => db.createBill(bill, items))
+ipcMain.handle('update-bill', (_, billId, items) => db.updateBill(billId, items))
 ipcMain.handle('toggle-paid', (_, id, paid) => db.toggleBillPaid(id, paid))
 ipcMain.handle('delete-bill', (_, id) => db.deleteBill(id))
 
