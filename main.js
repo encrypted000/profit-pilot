@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const isDev = !app.isPackaged
 
@@ -39,6 +40,38 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // Auto-update: only runs in packaged app, not during development
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdates()
+
+    autoUpdater.on('update-available', (info) => {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Available',
+        message: `Version ${info.version} is available.`,
+        detail: 'The update will download in the background. You will be notified when it is ready to install.',
+        buttons: ['OK'],
+      })
+    })
+
+    autoUpdater.on('update-downloaded', () => {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Ready',
+        message: 'Update downloaded successfully.',
+        detail: 'Restart the app now to install the update, or install it the next time you close the app.',
+        buttons: ['Restart Now', 'Later'],
+      }).then(result => {
+        if (result.response === 0) autoUpdater.quitAndInstall()
+      })
+    })
+
+    autoUpdater.on('error', (err) => {
+      // Silently ignore update errors — don't interrupt the user
+      console.error('Auto-update error:', err.message)
+    })
+  }
 })
 
 app.on('window-all-closed', () => {

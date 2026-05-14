@@ -28,10 +28,16 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "encrypted000",
+      "repo": "profit-pilot"
     }
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
+    "electron-updater": "^6.8.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "recharts": "^2.15.3"
