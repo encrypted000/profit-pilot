@@ -32,7 +32,7 @@ export default function Customers() {
       email: c.email || '', notes: c.notes || '',
       opening_balance: c.opening_balance || '',
     })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function cancelEdit() { setEditId(null); setForm(EMPTY) }

@@ -26,7 +26,7 @@ export default function Inventory() {
   function startEdit(p) {
     setEditId(p.id)
     setForm({ name: p.name, unit: p.unit, cost_price: p.cost_price, stock: p.stock })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function cancelEdit() {
@@ -52,7 +52,7 @@ export default function Inventory() {
     } else {
       await window.trsAPI.addProduct(data)
       flash(`"${data.name}" added to inventory.`)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' })
     }
     setForm(EMPTY)
     setEditId(null)

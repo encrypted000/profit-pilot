@@ -47,7 +47,7 @@ export default function Expenses() {
   function startEdit(e) {
     setEditId(e.id)
     setForm({ category: e.category, amount: e.amount, note: e.note || '', date: e.date })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.querySelector('.content')?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function cancelEdit() { setEditId(null); setForm(EMPTY) }
