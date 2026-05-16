@@ -1,4 +1,33 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim())
+  if (lines.length < 2) return []
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'))
+  return lines.slice(1).map(line => {
+    const values = []
+    let cur = '', inQ = false
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ }
+      else if (ch === ',' && !inQ) { values.push(cur.trim()); cur = '' }
+      else cur += ch
+    }
+    values.push(cur.trim())
+    const obj = {}
+    headers.forEach((h, i) => { obj[h] = (values[i] || '').replace(/^"|"$/g, '') })
+    return obj
+  })
+}
+
+function downloadTemplate(filename, headers, example) {
+  const csv = [headers.join(','), example.join(',')].join('\n')
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })),
+    download: filename,
+  })
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
 
 const EMPTY = { name: '', address: '', phone: '', email: '', notes: '', opening_balance: '' }
 
@@ -11,6 +40,7 @@ export default function Customers() {
   const [search, setSearch]       = useState('')
   const [msg, setMsg]             = useState(null)
   const [loading, setLoading]     = useState(true)
+  const fileInputRef = useRef(null)
 
   useEffect(() => { load() }, [])
 
@@ -36,6 +66,18 @@ export default function Customers() {
   }
 
   function cancelEdit() { setEditId(null); setForm(EMPTY) }
+
+  async function handleCSVImport(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const text = await file.text()
+    const rows = parseCSV(text)
+    if (!rows.length) { flash('No valid rows found in CSV.', 'error'); return }
+    const result = await window.trsAPI.importCustomers(rows)
+    flash(`✓ Imported ${result.imported} customers${result.skipped ? ` · ${result.skipped} rows skipped` : ''}.`)
+    load()
+    e.target.value = ''
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -87,7 +129,22 @@ export default function Customers() {
 
       {/* Form */}
       <div className="card">
-        <div className="card-title">{editId ? '✏️ Edit Customer' : '➕ Add New Customer'}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div className="card-title" style={{ margin: 0 }}>{editId ? '✏️ Edit Customer' : '➕ Add New Customer'}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost btn-sm"
+              onClick={() => downloadTemplate('customers_template.csv',
+                ['name','phone','address','email','opening_balance'],
+                ['John Doe','080-0000-0000','Tokyo Japan','john@email.com','0'])}>
+              ⬇ Download Template
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current.click()}>
+              📂 Import CSV
+            </button>
+            <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }}
+              onChange={handleCSVImport} />
+          </div>
+        </div>
         <form onSubmit={handleSubmit}>
           <div className="form-row" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
             <div className="form-group">

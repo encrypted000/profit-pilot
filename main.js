@@ -84,6 +84,8 @@ ipcMain.handle('get-products', () => db.getAllProducts())
 ipcMain.handle('add-product', (_, data) => db.addProduct(data))
 ipcMain.handle('update-product', (_, data) => db.updateProduct(data))
 ipcMain.handle('delete-product', (_, id) => db.deleteProduct(id))
+ipcMain.handle('import-products', (_, rows) => db.importProducts(rows))
+ipcMain.handle('import-customers', (_, rows) => db.importCustomers(rows))
 
 ipcMain.handle('get-bills', () => db.getAllBills())
 ipcMain.handle('create-bill', (_, bill, items) => db.createBill(bill, items))

@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('trsAPI', {
   addProduct: (data) => ipcRenderer.invoke('add-product', data),
   updateProduct: (data) => ipcRenderer.invoke('update-product', data),
   deleteProduct: (id) => ipcRenderer.invoke('delete-product', id),
+  importProducts: (rows) => ipcRenderer.invoke('import-products', rows),
+  importCustomers: (rows) => ipcRenderer.invoke('import-customers', rows),
 
   // Bills
   getBills: () => ipcRenderer.invoke('get-bills'),

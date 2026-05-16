@@ -519,8 +519,60 @@ function deleteExpense(id) {
   return db.prepare('DELETE FROM expenses WHERE id=?').run(id)
 }
 
+function importProducts(rows) {
+  const insert = db.prepare(`
+    INSERT INTO products (name, unit, cost_price, sell_price, stock)
+    VALUES (@name, @unit, @cost_price, @sell_price, @stock)
+  `)
+  let imported = 0, skipped = 0
+  db.transaction(() => {
+    rows.forEach(row => {
+      const name = (row.name || '').trim()
+      if (!name) { skipped++; return }
+      try {
+        insert.run({
+          name,
+          unit: (row.unit || 'cs').trim(),
+          cost_price: parseFloat(row.cost_price) || 0,
+          sell_price: 0,
+          stock: parseInt(row.stock) || 0,
+        })
+        imported++
+      } catch (_) { skipped++ }
+    })
+  })()
+  return { imported, skipped }
+}
+
+function importCustomers(rows) {
+  const insert = db.prepare(`
+    INSERT INTO customers (name, phone, address, email, notes, opening_balance)
+    VALUES (@name, @phone, @address, @email, @notes, @opening_balance)
+  `)
+  let imported = 0, skipped = 0
+  db.transaction(() => {
+    rows.forEach(row => {
+      const name = (row.name || '').trim()
+      if (!name) { skipped++; return }
+      try {
+        insert.run({
+          name,
+          phone:           (row.phone   || '').trim(),
+          address:         (row.address || '').trim(),
+          email:           (row.email   || '').trim(),
+          notes:           (row.notes   || '').trim(),
+          opening_balance: parseFloat(row.opening_balance) || 0,
+        })
+        imported++
+      } catch (_) { skipped++ }
+    })
+  })()
+  return { imported, skipped }
+}
+
 module.exports = {
-  getAllProducts, addProduct, updateProduct, deleteProduct,
+  getAllProducts, addProduct, updateProduct, deleteProduct, importProducts,
+  importCustomers,
   getAllBills, createBill, updateBill, toggleBillPaid, recordPayment, deleteBill,
   getCustomerOutstanding,
   getDashboardStats,
