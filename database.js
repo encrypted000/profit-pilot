@@ -3,9 +3,7 @@ const path = require('path')
 const { app } = require('electron')
 
 // In dev: store in userData. When packaged: store next to the .exe so it's easy to find/backup.
-const dbPath = app.isPackaged
-  ? path.join(path.dirname(app.getPath('exe')), 'trs.db')
-  : path.join(app.getPath('userData'), 'trs.db')
+const dbPath = path.join(app.getPath('userData'), 'trs.db')
 const db = new Database(dbPath)
 
 // Enable WAL mode for better performance

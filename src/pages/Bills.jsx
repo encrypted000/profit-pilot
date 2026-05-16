@@ -4,6 +4,7 @@ const COMPANY = {
   name:    'TRS TRAVEL & TOURS PRIVATE LIMITED',
   address: '〒262-0046 Chibaken Chiba-shi\nHanamigawaku Hanashima-cho 407-17',
   phone:   '(080) 4478-1978',
+  taxNo:   'T3700150011038',
   bank:    'JP POST BANK\nACC NAME: TRS TRAVEL AND TOURS PRIVATE LIMITED\nACC NO: 10030-15316731   BRANCH CODE: 008',
 }
 
@@ -57,7 +58,7 @@ function PrintView({ bill, onClose }) {
                 <tbody>
                   <tr>
                     <td style={{ color: '#555', paddingRight: 8 }}>TAX NO:</td>
-                    <td style={{ borderBottom: '1px solid #aaa', minWidth: 120 }}>&nbsp;</td>
+                    <td style={{ minWidth: 120, fontWeight: 600 }}>{COMPANY.taxNo}</td>
                   </tr>
                   <tr>
                     <td style={{ color: '#555', paddingRight: 8, paddingTop: 4 }}>DATE:</td>
