@@ -20,7 +20,7 @@ function fmtDate(s) {
 function PrintView({ bill, onClose }) {
   if (!bill) return null
   const MIN_ROWS = 10
-  const emptyRows = Math.max(0, MIN_ROWS - bill.items.length)
+  const emptyRows = bill.items.length >= MIN_ROWS ? 0 : MIN_ROWS - bill.items.length
 
   return (
     <div style={{
@@ -34,6 +34,10 @@ function PrintView({ bill, onClose }) {
           #invoice-print-root { display: block !important; position: fixed; inset: 0; }
           #invoice-print-root .no-print { display: none !important; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .invoice-footer { page-break-inside: avoid; }
+          .invoice-table { page-break-inside: auto; }
+          .invoice-table tr { page-break-inside: avoid; page-break-after: auto; }
+          .invoice-header { page-break-after: avoid; }
         }
       `}</style>
 
@@ -44,7 +48,7 @@ function PrintView({ bill, onClose }) {
         <div style={{ padding: '32px 36px', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 12, color: '#111', lineHeight: 1.4 }}>
 
           {/* ── Header ── */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div className="invoice-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             {/* Left: logo + address */}
             <div>
               <div style={{ fontSize: 42, fontWeight: 900, color: '#000', letterSpacing: 3, lineHeight: 1, marginBottom: 6 }}>TRS</div>
@@ -91,7 +95,7 @@ function PrintView({ bill, onClose }) {
           </div>
 
           {/* ── Items table ── */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16, fontSize: 11.5 }}>
+          <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16, fontSize: 11.5 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #000' }}>
                 <th style={{ padding: '7px 8px', textAlign: 'center', width: 36, color: '#000', fontSize: 10.5 }}>S/N</th>
@@ -124,7 +128,7 @@ function PrintView({ bill, onClose }) {
           </table>
 
           {/* ── Footer ── */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20 }}>
+          <div className="invoice-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20 }}>
             {/* Left: thank you + bank */}
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 6, color: '#000' }}>THANK YOU FOR YOUR BUSINESS...!</div>
