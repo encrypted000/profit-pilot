@@ -20,6 +20,11 @@ export default function NewBill({ onSaved }) {
   const [selQty, setSelQty]         = useState(1)
   const [selPrice, setSelPrice]     = useState('')
   const [msg, setMsg]               = useState(null)
+
+  function flash(text, type = 'error') {
+    setMsg({ text, type })
+    setTimeout(() => setMsg(null), 4000)
+  }
   const [saving, setSaving]         = useState(false)
 
   useEffect(() => {
@@ -66,14 +71,14 @@ export default function NewBill({ onSaved }) {
     const unitPrice = parseFloat(selPrice)
     if (!qty || qty <= 0 || !unitPrice || unitPrice <= 0) return
     if (qty > availableStock) {
-      setMsg({ text: `Only ${availableStock} unit(s) of "${selectedProd.name}" available in stock.`, type: 'error' })
+      flash(`Only ${availableStock} unit(s) of "${selectedProd.name}" available in stock.`)
       return
     }
     const existing = items.find(i => i.product_id === selectedProd.id)
     if (existing) {
       setItems(items.map(i =>
         i.product_id === selectedProd.id
-          ? { ...i, quantity: i.quantity + qty, total: (i.quantity + qty) * i.unit_price }
+          ? { ...i, quantity: i.quantity + qty, unit_price: unitPrice, total: (i.quantity + qty) * unitPrice }
           : i
       ))
     } else {
@@ -122,8 +127,8 @@ export default function NewBill({ onSaved }) {
   const balance     = totalAmount - paidTodayAmt
 
   async function handleSave() {
-    if (!customer.name.trim()) { setMsg({ text: 'Customer name is required.', type: 'error' }); return }
-    if (items.length === 0)    { setMsg({ text: 'Add at least one item.', type: 'error' }); return }
+    if (!customer.name.trim()) { flash('Customer name is required.'); return }
+    if (items.length === 0)    { flash('Add at least one item.'); return }
 
     setSaving(true)
     const bills = await window.trsAPI.getBills()
@@ -290,14 +295,13 @@ export default function NewBill({ onSaved }) {
           <div className="form-row" style={{ gridTemplateColumns: '1fr 1fr' }}>
             <div className="form-group">
               <label>Quantity {selectedProd ? `(max ${availableStock})` : ''}</label>
-              <input className="form-control" type="number" min="1"
-                max={availableStock || undefined}
+              <input className="form-control" type="number"
                 value={selQty} onChange={e => setSelQty(e.target.value)}
                 disabled={!selectedProd} />
             </div>
             <div className="form-group">
               <label>Selling Price (¥) *</label>
-              <input className="form-control" type="number" min="0"
+              <input className="form-control" type="number"
                 value={selPrice} onChange={e => setSelPrice(e.target.value)}
                 placeholder="Type selling price"
                 disabled={!selectedProd} />
@@ -341,15 +345,14 @@ export default function NewBill({ onSaved }) {
                     <tr key={item.product_id}>
                       <td style={{ fontWeight: 500 }}>{item.product_name}</td>
                       <td>
-                        <input type="number" min="1"
-                          max={products.find(p => p.id === item.product_id)?.stock || undefined}
+                        <input type="number"
                           className="form-control"
                           style={{ width: 80 }}
                           value={item.quantity}
                           onChange={e => updateQty(item.product_id, e.target.value)} />
                       </td>
                       <td>
-                        <input type="number" min="0"
+                        <input type="number"
                           className="form-control"
                           style={{ width: 100 }}
                           value={item.unit_price}
@@ -413,7 +416,7 @@ export default function NewBill({ onSaved }) {
                 {/* Paid Today */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: 13, borderBottom: '1px solid var(--border)' }}>
                   <span style={{ color: 'var(--green)', fontWeight: 600 }}>Paid Today (¥)</span>
-                  <input type="number" min="0" max={totalAmount} className="form-control"
+                  <input type="number" className="form-control"
                     style={{ width: 130, textAlign: 'right', padding: '3px 8px', fontSize: 13 }}
                     placeholder="0"
                     value={paidToday} onChange={e => setPaidToday(e.target.value)} />

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Bills from './pages/Bills'
 import Inventory from './pages/Inventory'
@@ -25,6 +25,11 @@ const PAGE_TITLES = {
 
 export default function App() {
   const [page, setPage] = useState('dashboard')
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    window.trsAPI.getVersion().then(setVersion)
+  }, [])
 
   return (
     <div className="app-layout">
@@ -47,7 +52,7 @@ export default function App() {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span>v1.0.0</span>
+          <span>v{version}</span>
         </div>
       </aside>
 

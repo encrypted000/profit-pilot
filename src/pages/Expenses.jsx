@@ -110,7 +110,7 @@ export default function Expenses() {
             </div>
             <div className="form-group">
               <label>Amount (¥) *</label>
-              <input className="form-control" type="number" min="1" step="1"
+              <input className="form-control" type="number"
                 value={form.amount}
                 onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                 placeholder="e.g. 5000" />

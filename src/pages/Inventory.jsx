@@ -155,14 +155,14 @@ export default function Inventory() {
             </div>
             <div className="form-group">
               <label>Cost Price (¥)</label>
-              <input className="form-control" type="number" min="0" step="0.01"
+              <input className="form-control" type="number"
                 value={form.cost_price}
                 onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))}
                 placeholder="80" />
             </div>
             <div className="form-group">
               <label>Stock Qty</label>
-              <input className="form-control" type="number" min="0"
+              <input className="form-control" type="number"
                 value={form.stock}
                 onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
                 placeholder="100" />

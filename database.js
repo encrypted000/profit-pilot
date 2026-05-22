@@ -126,7 +126,7 @@ if (count.c === 0) {
 
 // ── PRODUCT QUERIES ──────────────────────────────────────────────────────────
 function getAllProducts() {
-  return db.prepare('SELECT * FROM products ORDER BY id DESC').all()
+  return db.prepare('SELECT * FROM products ORDER BY name COLLATE NOCASE ASC').all()
 }
 
 function addProduct(data) {
@@ -214,11 +214,13 @@ function createBill(billData, items) {
 }
 
 function toggleBillPaid(id, paid) {
-  const bill = db.prepare('SELECT grand_total FROM bills WHERE id=?').get(id)
+  const bill = db.prepare('SELECT grand_total, amount_paid FROM bills WHERE id=?').get(id)
   if (paid) {
     db.prepare('UPDATE bills SET paid=1, amount_paid=? WHERE id=?').run(bill.grand_total, id)
   } else {
-    db.prepare('UPDATE bills SET paid=0, amount_paid=0 WHERE id=?').run(id)
+    // Preserve any partial payment already recorded — only clear if it was a full toggle-pay
+    const keepPaid = (bill.amount_paid || 0) < bill.grand_total ? (bill.amount_paid || 0) : 0
+    db.prepare('UPDATE bills SET paid=0, amount_paid=? WHERE id=?').run(keepPaid, id)
   }
 }
 
@@ -228,6 +230,13 @@ function recordPayment(id, amount) {
   const isPaid = newAmountPaid >= bill.grand_total ? 1 : 0
   db.prepare('UPDATE bills SET amount_paid=?, paid=? WHERE id=?').run(newAmountPaid, isPaid, id)
   return { amount_paid: newAmountPaid, due: bill.grand_total - newAmountPaid, paid: isPaid }
+}
+
+function correctPayment(id, newTotal) {
+  const bill = db.prepare('SELECT grand_total FROM bills WHERE id=?').get(id)
+  const amt = Math.max(0, Math.min(parseFloat(newTotal) || 0, bill.grand_total))
+  const isPaid = amt >= bill.grand_total ? 1 : 0
+  db.prepare('UPDATE bills SET amount_paid=?, paid=? WHERE id=?').run(amt, isPaid, id)
 }
 
 function getCustomerOutstanding(customerName) {
@@ -264,9 +273,10 @@ function updateBill(billId, newItems) {
       newSubTotal += total
       if (item.product_id) adjustStock(item.product_id, qty)
     })
-    // Recalculate bill totals
+    // Recalculate bill totals — preserve existing discount
     const bill = db.prepare('SELECT * FROM bills WHERE id=?').get(billId)
-    const newGrandTotal = newSubTotal + (bill.previous_due || 0)
+    const discount = bill.discount || 0
+    const newGrandTotal = newSubTotal - discount + (bill.previous_due || 0)
     const newAmountPaid = Math.min(bill.amount_paid || 0, newGrandTotal)
     const isPaid = newAmountPaid >= newGrandTotal ? 1 : 0
     db.prepare('UPDATE bills SET sub_total=?, grand_total=?, amount_paid=?, paid=? WHERE id=?')
@@ -276,7 +286,16 @@ function updateBill(billId, newItems) {
 }
 
 function deleteBill(id) {
-  db.prepare('DELETE FROM bills WHERE id=?').run(id)
+  const transaction = db.transaction(() => {
+    const items = db.prepare('SELECT * FROM bill_items WHERE bill_id=?').all(id)
+    items.forEach(item => {
+      if (item.product_id) {
+        db.prepare('UPDATE products SET stock = stock + ? WHERE id=?').run(item.quantity, item.product_id)
+      }
+    })
+    db.prepare('DELETE FROM bills WHERE id=?').run(id)
+  })
+  transaction()
 }
 
 // ── DASHBOARD STATS ──────────────────────────────────────────────────────────
@@ -359,10 +378,16 @@ function getDashboardStats() {
       FROM bill_items bi JOIN bills b ON bi.bill_id = b.id
       WHERE strftime('%Y-%m', b.created_at) = ? AND b.bill_type != 'opening_balance'
     `).get(m).total
+    const cogs = db.prepare(`
+      SELECT COALESCE(SUM(bi.quantity * COALESCE(p.cost_price, 0)), 0) as total
+      FROM bill_items bi JOIN bills b ON bi.bill_id = b.id
+      LEFT JOIN products p ON bi.product_id = p.id
+      WHERE strftime('%Y-%m', b.created_at) = ? AND b.bill_type != 'opening_balance'
+    `).get(m).total
     const exp = db.prepare(`
       SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE strftime('%Y-%m', date) = ?
     `).get(m).total
-    return { month: m.slice(5), revenue: rev, expenses: exp }
+    return { month: m.slice(5), revenue: rev, expenses: exp, profit: rev - cogs - exp }
   })
 
   // Top customers by sales revenue (from actual items sold, no double-counting)
@@ -545,9 +570,13 @@ function importProducts(rows) {
 }
 
 function importCustomers(rows) {
-  const insert = db.prepare(`
+  const insertCust = db.prepare(`
     INSERT INTO customers (name, phone, address, email, notes, opening_balance)
     VALUES (@name, @phone, @address, @email, @notes, @opening_balance)
+  `)
+  const insertOB = db.prepare(`
+    INSERT INTO bills (bill_number, customer_name, bill_type, sub_total, grand_total, amount_paid, paid, created_at, tax_rate, discount, tax_amount)
+    VALUES (?, ?, 'opening_balance', ?, ?, 0, 0, datetime('now'), 0, 0, 0)
   `)
   let imported = 0, skipped = 0
   db.transaction(() => {
@@ -555,14 +584,18 @@ function importCustomers(rows) {
       const name = (row.name || '').trim()
       if (!name) { skipped++; return }
       try {
-        insert.run({
+        const ob = parseFloat(row.opening_balance) || 0
+        const result = insertCust.run({
           name,
           phone:           (row.phone   || '').trim(),
           address:         (row.address || '').trim(),
           email:           (row.email   || '').trim(),
           notes:           (row.notes   || '').trim(),
-          opening_balance: parseFloat(row.opening_balance) || 0,
+          opening_balance: ob,
         })
+        if (ob > 0) {
+          insertOB.run(`OB-${result.lastInsertRowid}`, name, ob, ob)
+        }
         imported++
       } catch (_) { skipped++ }
     })
@@ -573,7 +606,7 @@ function importCustomers(rows) {
 module.exports = {
   getAllProducts, addProduct, updateProduct, deleteProduct, importProducts,
   importCustomers,
-  getAllBills, createBill, updateBill, toggleBillPaid, recordPayment, deleteBill,
+  getAllBills, createBill, updateBill, toggleBillPaid, recordPayment, correctPayment, deleteBill,
   getCustomerOutstanding,
   getDashboardStats,
   getAllCustomers, addCustomer, updateCustomer, deleteCustomer, payOpeningBalance,

@@ -167,7 +167,7 @@ export default function Customers() {
             </div>
             <div className="form-group">
               <label>Opening Balance (¥)</label>
-              <input className="form-control" type="number" min="0" step="1"
+              <input className="form-control" type="number"
                 value={form.opening_balance}
                 onChange={e => setForm(f => ({ ...f, opening_balance: e.target.value }))}
                 placeholder="0" />

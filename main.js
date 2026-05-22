@@ -109,6 +109,9 @@ ipcMain.handle('add-expense',    (_, data)    => db.addExpense(data))
 ipcMain.handle('update-expense', (_, data)    => db.updateExpense(data))
 ipcMain.handle('delete-expense', (_, id)      => db.deleteExpense(id))
 
+ipcMain.handle('correct-payment', (_, id, newTotal) => db.correctPayment(id, newTotal))
+ipcMain.handle('get-version', () => app.getVersion())
+
 ipcMain.handle('print-bill', async (_, billId) => {
   const printWin = new BrowserWindow({
     show: false,

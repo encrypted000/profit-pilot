@@ -30,6 +30,8 @@ contextBridge.exposeInMainWorld('trsAPI', {
 
   // Payments
   recordPayment:          (id, amt)    => ipcRenderer.invoke('record-payment', id, amt),
+  correctPayment:         (id, amt)    => ipcRenderer.invoke('correct-payment', id, amt),
+  getVersion:             ()           => ipcRenderer.invoke('get-version'),
   getCustomerOutstanding: (name)       => ipcRenderer.invoke('get-customer-outstanding', name),
   payOpeningBalance:      (id, amt)    => ipcRenderer.invoke('pay-opening-balance', id, amt),
 

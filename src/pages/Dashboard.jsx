@@ -23,6 +23,7 @@ export default function Dashboard({ onNavigate }) {
   if (loading) return <div className="empty-state"><p>Loading...</p></div>
 
   const {
+    revenue, cost, profit, totalBills,
     thisMonth, monthlyData, topProducts, lowStock,
     topCustomers, topCustomersByProfit, topExpenses, totalOutstanding,
   } = stats
@@ -49,6 +50,35 @@ export default function Dashboard({ onNavigate }) {
 
   return (
     <>
+      {/* ── All-Time KPI strip ── */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+          All Time Summary
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+          <div className="stat-card blue">
+            <span className="stat-icon">💴</span>
+            <span className="stat-value" style={{ color: 'var(--blue)', fontSize: 18 }}>{fmt(revenue)}</span>
+            <span className="stat-label">Total Revenue</span>
+          </div>
+          <div className="stat-card amber">
+            <span className="stat-icon">🏷️</span>
+            <span className="stat-value" style={{ color: '#d97706', fontSize: 18 }}>{fmt(cost)}</span>
+            <span className="stat-label">Total Cost of Goods</span>
+          </div>
+          <div className={`stat-card ${profit >= 0 ? 'green' : 'red'}`}>
+            <span className="stat-icon">{profit >= 0 ? '📈' : '📉'}</span>
+            <span className="stat-value" style={{ color: profit >= 0 ? 'var(--green)' : 'var(--red)', fontSize: 18 }}>{fmt(profit)}</span>
+            <span className="stat-label">Net Profit (after expenses)</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-icon">🧾</span>
+            <span className="stat-value" style={{ fontSize: 18 }}>{Number(totalBills).toLocaleString()}</span>
+            <span className="stat-label">Total Bills Issued</span>
+          </div>
+        </div>
+      </div>
+
       {/* ── This Month KPI strip ── */}
       <div style={{ marginBottom: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
@@ -100,22 +130,23 @@ export default function Dashboard({ onNavigate }) {
         </div>
       )}
 
-      {/* ── Row 1: Revenue vs Expenses chart + Low Stock ── */}
+      {/* ── Row 1: Revenue vs Expenses vs Profit chart + Low Stock ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div className="card" style={{ marginBottom: 0 }}>
-          <div className="card-title">Revenue vs Expenses (Last 6 Months)</div>
+          <div className="card-title">Revenue / Expenses / Net Profit (Last 6 Months)</div>
           {monthlyData.every(m => m.revenue === 0 && m.expenses === 0) ? (
             <div className="empty-state" style={{ padding: '24px 0' }}><p>No data yet</p></div>
           ) : (
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={monthlyData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} tickFormatter={v => '¥' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v)} />
                 <Tooltip formatter={v => fmt(v)} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="revenue"  name="Revenue"  fill="#1a4db3" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="expenses" name="Expenses" fill="#dc2626" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="revenue"  name="Revenue"      fill="#1a4db3" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="expenses" name="Expenses"     fill="#dc2626" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="profit"   name="Net Profit"   fill="#16a34a" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
