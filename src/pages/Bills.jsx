@@ -1,4 +1,5 @@
 import { useEffect, useState, Fragment } from 'react'
+import { createPortal } from 'react-dom'
 
 const COMPANY = {
   name:    'TRS TRAVEL & TOURS PRIVATE LIMITED',
@@ -11,22 +12,21 @@ const COMPANY = {
 function fmt(n) { return Number(n || 0).toLocaleString('ja-JP') }
 function fmtDate(s) {
   if (!s) return ''
-  const d = s.split('T')[0] || s
+  const d = s.split('T')[0].split(' ')[0]
   const [y, m, day] = d.split('-')
   return `${day}/${m}/${y}`
 }
 
 // ── Print Invoice ─────────────────────────────────────────────────────────────
 function PrintView({ bill, onClose }) {
-  function handlePrint() {
-    window.print()
-  }
   if (!bill) return null
   const MIN_ROWS = 10
   const emptyRows = bill.items.length >= MIN_ROWS ? 0 : MIN_ROWS - bill.items.length
 
-  return (
-    <div style={{
+  // Render into document.body so the overlay is a direct body child.
+  // This lets @media print hide #root (the app) and show only the invoice cleanly.
+  return createPortal(
+    <div id="invoice-modal-overlay" style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)',
       zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
@@ -34,9 +34,16 @@ function PrintView({ bill, onClose }) {
       <style>{`
         @page { size: A4; margin: 10mm; }
         @media print {
-          body * { visibility: hidden; }
-          #invoice-print-root, #invoice-print-root * { visibility: visible !important; }
+          body > * { display: none !important; }
+          body > #invoice-modal-overlay {
+            display: block !important;
+            position: static !important;
+            background: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           #invoice-print-root {
+            display: block !important;
             position: static !important;
             width: 100% !important;
             max-height: none !important;
@@ -58,28 +65,28 @@ function PrintView({ bill, onClose }) {
         background: '#fff', width: 740, maxHeight: '92vh', overflowY: 'auto',
         borderRadius: 10, boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
       }}>
-        <div style={{ padding: '20px 26px', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 10.5, color: '#111', lineHeight: 1.3 }}>
+        <div style={{ padding: '32px 36px', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: 12, color: '#111', lineHeight: 1.4 }}>
 
           {/* ── Header ── */}
-          <div className="invoice-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          <div className="invoice-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
             {/* Left: logo + address */}
             <div>
-              <div style={{ fontSize: 32, fontWeight: 900, color: '#000', letterSpacing: 3, lineHeight: 1, marginBottom: 4 }}>TRS</div>
-              <div style={{ fontSize: 9.5, color: '#333', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{COMPANY.address}</div>
-              <div style={{ fontSize: 9.5, color: '#333', marginTop: 2 }}>☎ {COMPANY.phone}</div>
+              <div style={{ fontSize: 42, fontWeight: 900, color: '#000', letterSpacing: 3, lineHeight: 1, marginBottom: 6 }}>TRS</div>
+              <div style={{ fontSize: 10.5, color: '#333', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{COMPANY.address}</div>
+              <div style={{ fontSize: 10.5, color: '#333', marginTop: 2 }}>☎ {COMPANY.phone}</div>
             </div>
             {/* Right: company name + invoice meta */}
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: 800, fontSize: 11, color: '#000', marginBottom: 6 }}>{COMPANY.name}</div>
-              <table style={{ fontSize: 10, marginLeft: 'auto', borderCollapse: 'collapse' }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: '#000', marginBottom: 8 }}>{COMPANY.name}</div>
+              <table style={{ fontSize: 11, marginLeft: 'auto', borderCollapse: 'collapse' }}>
                 <tbody>
                   <tr>
                     <td style={{ color: '#555', paddingRight: 8 }}>TAX NO:</td>
-                    <td style={{ minWidth: 110, fontWeight: 600 }}>{COMPANY.taxNo}</td>
+                    <td style={{ minWidth: 120, fontWeight: 600 }}>{COMPANY.taxNo}</td>
                   </tr>
                   <tr>
-                    <td style={{ color: '#555', paddingRight: 8, paddingTop: 3 }}>DATE:</td>
-                    <td style={{ paddingTop: 3 }}>{fmtDate(bill.created_at)}</td>
+                    <td style={{ color: '#555', paddingRight: 8, paddingTop: 4 }}>DATE:</td>
+                    <td style={{ paddingTop: 4 }}>{fmtDate(bill.created_at)}</td>
                   </tr>
                   <tr>
                     <td style={{ color: '#555', paddingRight: 8 }}>INVOICE:</td>
@@ -92,106 +99,107 @@ function PrintView({ bill, onClose }) {
 
           {/* ── TAX INVOICE banner ── */}
           <div style={{
-            textAlign: 'center', fontWeight: 800, fontSize: 13, letterSpacing: 2,
-            borderTop: '2px solid #000', borderBottom: '2px solid #000',
-            padding: '4px 0', margin: '0 0 8px', color: '#000',
+            textAlign: 'center', fontWeight: 800, fontSize: 16, letterSpacing: 2,
+            borderTop: '2.5px solid #000', borderBottom: '2.5px solid #000',
+            padding: '6px 0', margin: '0 0 14px', color: '#000',
           }}>
             TAX INVOICE
           </div>
 
           {/* ── Bill To ── */}
-          <div style={{ marginBottom: 8, padding: '6px 10px', background: '#f5f5f5', borderRadius: 4, border: '1px solid #ccc' }}>
-            <div style={{ fontWeight: 700, fontSize: 9, color: '#555', letterSpacing: 0.5, marginBottom: 3, textTransform: 'uppercase' }}>Bill To</div>
-            <div style={{ fontWeight: 700, fontSize: 11.5, color: '#000' }}>{bill.customer_name}</div>
-            {bill.customer_address && <div style={{ fontSize: 9.5, color: '#333', marginTop: 1 }}>〒 {bill.customer_address}</div>}
-            {bill.customer_phone   && <div style={{ fontSize: 9.5, color: '#333', marginTop: 1 }}>☎ {bill.customer_phone}</div>}
+          <div style={{ marginBottom: 14, padding: '10px 14px', background: '#f5f5f5', borderRadius: 6, border: '1px solid #ccc' }}>
+            <div style={{ fontWeight: 700, fontSize: 10.5, color: '#555', letterSpacing: 0.5, marginBottom: 5, textTransform: 'uppercase' }}>Bill To</div>
+            <div style={{ fontWeight: 700, fontSize: 13, color: '#000' }}>{bill.customer_name}</div>
+            {bill.customer_address && <div style={{ fontSize: 11, color: '#333', marginTop: 2 }}>〒 {bill.customer_address}</div>}
+            {bill.customer_phone   && <div style={{ fontSize: 11, color: '#333', marginTop: 1 }}>☎ {bill.customer_phone}</div>}
           </div>
 
           {/* ── Items table ── */}
-          <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10, fontSize: 10 }}>
+          <table className="invoice-table" style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16, fontSize: 11.5 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #000' }}>
-                <th style={{ padding: '5px 6px', textAlign: 'center', width: 30, color: '#000', fontSize: 9.5 }}>S/N</th>
-                <th style={{ padding: '5px 6px', textAlign: 'left', color: '#000', fontSize: 9.5 }}>PRODUCT DETAILS</th>
-                <th style={{ padding: '5px 6px', textAlign: 'right', width: 70, color: '#000', fontSize: 9.5 }}>QTY</th>
-                <th style={{ padding: '5px 6px', textAlign: 'right', width: 80, color: '#000', fontSize: 9.5 }}>UNIT PRICE</th>
-                <th style={{ padding: '5px 6px', textAlign: 'right', width: 80, color: '#000', fontSize: 9.5 }}>TOTAL</th>
+                <th style={{ padding: '7px 8px', textAlign: 'center', width: 36, color: '#000', fontSize: 10.5 }}>S/N</th>
+                <th style={{ padding: '7px 8px', textAlign: 'left', color: '#000', fontSize: 10.5 }}>PRODUCT DETAILS</th>
+                <th style={{ padding: '7px 8px', textAlign: 'right', width: 80, color: '#000', fontSize: 10.5 }}>QTY</th>
+                <th style={{ padding: '7px 8px', textAlign: 'right', width: 90, color: '#000', fontSize: 10.5 }}>UNIT PRICE</th>
+                <th style={{ padding: '7px 8px', textAlign: 'right', width: 90, color: '#000', fontSize: 10.5 }}>TOTAL</th>
               </tr>
             </thead>
             <tbody>
               {bill.items.map((item, i) => (
                 <tr key={i}>
-                  <td style={{ border: '1px solid #bbb', padding: '3px 5px', textAlign: 'center', color: '#333' }}>{i + 1}</td>
-                  <td style={{ border: '1px solid #bbb', padding: '3px 5px' }}>{item.product_name}</td>
-                  <td style={{ border: '1px solid #bbb', padding: '3px 5px', textAlign: 'right' }}>{fmt(item.quantity)}</td>
-                  <td style={{ border: '1px solid #bbb', padding: '3px 5px', textAlign: 'right' }}>{fmt(item.unit_price)}</td>
-                  <td style={{ border: '1px solid #bbb', padding: '3px 5px', textAlign: 'right', fontWeight: 600 }}>{fmt(item.total)}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'center', color: '#333' }}>{i + 1}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px' }}>{item.product_name}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'right' }}>{fmt(item.quantity)}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'right' }}>{fmt(item.unit_price)}</td>
+                  <td style={{ border: '1px solid #bbb', padding: '6px 8px', textAlign: 'right', fontWeight: 600 }}>{fmt(item.total)}</td>
                 </tr>
               ))}
               {Array.from({ length: emptyRows }).map((_, i) => (
                 <tr key={`e${i}`}>
-                  <td style={{ border: '1px solid #bbb', padding: '8px 5px' }}>&nbsp;</td>
-                  <td style={{ border: '1px solid #bbb', padding: '8px 5px' }}></td>
-                  <td style={{ border: '1px solid #bbb', padding: '8px 5px' }}></td>
-                  <td style={{ border: '1px solid #bbb', padding: '8px 5px' }}></td>
-                  <td style={{ border: '1px solid #bbb', padding: '8px 5px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}>&nbsp;</td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
+                  <td style={{ border: '1px solid #bbb', padding: '12px 8px' }}></td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* ── Footer ── */}
-          <div className="invoice-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16 }}>
-            {/* Left: thank you + bank */}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 10.5, marginBottom: 4, color: '#000' }}>THANK YOU FOR YOUR BUSINESS...!</div>
-              <div style={{ fontSize: 9, color: '#333', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{COMPANY.bank}</div>
-            </div>
-
-            {/* Right: totals */}
-            <div>
-              <table style={{ fontSize: 10.5, borderCollapse: 'collapse', minWidth: 220 }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '3px 10px', color: '#555' }}>SUB TOTAL</td>
-                    <td style={{ textAlign: 'right', padding: '3px 10px' }}>¥{fmt(bill.sub_total)}</td>
-                  </tr>
-                  {bill.discount > 0 && (
-                    <tr>
-                      <td style={{ padding: '3px 10px' }}>DISCOUNT</td>
-                      <td style={{ textAlign: 'right', padding: '3px 10px' }}>- ¥{fmt(bill.discount)}</td>
-                    </tr>
-                  )}
-                  {(bill.previous_due || 0) > 0 && (
-                    <tr>
-                      <td style={{ padding: '3px 10px', fontWeight: 700 }}>PREVIOUS DUE</td>
-                      <td style={{ textAlign: 'right', padding: '3px 10px', fontWeight: 700 }}>+ ¥{fmt(bill.previous_due)}</td>
-                    </tr>
-                  )}
-                  {(bill.previous_due || 0) > 0 && (
-                    <tr style={{ borderTop: '1px solid #bbb' }}>
-                      <td style={{ padding: '3px 10px', fontWeight: 700 }}>GRAND TOTAL</td>
-                      <td style={{ textAlign: 'right', padding: '3px 10px', fontWeight: 700 }}>¥{fmt(bill.grand_total)}</td>
-                    </tr>
-                  )}
-                  {(bill.amount_paid || 0) > 0 && (
-                    <tr>
-                      <td style={{ padding: '3px 10px', fontWeight: 700 }}>PAID</td>
-                      <td style={{ textAlign: 'right', padding: '3px 10px', fontWeight: 700 }}>- ¥{fmt(bill.amount_paid)}</td>
-                    </tr>
-                  )}
-                  <tr style={{ borderTop: '2px solid #000' }}>
-                    <td style={{ padding: '6px 10px', fontWeight: 800, fontSize: 11.5, color: '#000' }}>
-                      {(bill.amount_paid || 0) > 0 ? 'BALANCE DUE' : 'GRAND TOTAL'}
-                    </td>
-                    <td style={{ textAlign: 'right', padding: '6px 10px', fontWeight: 800, fontSize: 11.5, color: '#000' }}>
-                      ¥{fmt(bill.grand_total - (bill.amount_paid || 0))}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* ── Footer ── table layout is more reliable than flex for print */}
+          <table className="invoice-footer" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <tbody>
+              <tr>
+                <td style={{ verticalAlign: 'bottom', paddingRight: 16 }}>
+                  <div style={{ fontWeight: 800, fontSize: 12, marginBottom: 6, color: '#000' }}>THANK YOU FOR YOUR BUSINESS...!</div>
+                  <div style={{ fontSize: 10, color: '#333', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{COMPANY.bank}</div>
+                </td>
+                <td style={{ verticalAlign: 'bottom', whiteSpace: 'nowrap' }}>
+                  <table style={{ fontSize: 12, borderCollapse: 'collapse', minWidth: 240, marginLeft: 'auto' }}>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '5px 12px', color: '#555' }}>SUB TOTAL</td>
+                        <td style={{ textAlign: 'right', padding: '5px 12px' }}>¥{fmt(bill.sub_total)}</td>
+                      </tr>
+                      {bill.discount > 0 && (
+                        <tr>
+                          <td style={{ padding: '5px 12px' }}>DISCOUNT</td>
+                          <td style={{ textAlign: 'right', padding: '5px 12px' }}>- ¥{fmt(bill.discount)}</td>
+                        </tr>
+                      )}
+                      {(bill.previous_due || 0) > 0 && (
+                        <tr>
+                          <td style={{ padding: '5px 12px', fontWeight: 700 }}>PREVIOUS DUE</td>
+                          <td style={{ textAlign: 'right', padding: '5px 12px', fontWeight: 700 }}>+ ¥{fmt(bill.previous_due)}</td>
+                        </tr>
+                      )}
+                      {(bill.previous_due || 0) > 0 && (
+                        <tr style={{ borderTop: '1px solid #bbb' }}>
+                          <td style={{ padding: '5px 12px', fontWeight: 700 }}>GRAND TOTAL</td>
+                          <td style={{ textAlign: 'right', padding: '5px 12px', fontWeight: 700 }}>¥{fmt(bill.grand_total)}</td>
+                        </tr>
+                      )}
+                      {(bill.amount_paid || 0) > 0 && (
+                        <tr>
+                          <td style={{ padding: '5px 12px', fontWeight: 700 }}>PAID</td>
+                          <td style={{ textAlign: 'right', padding: '5px 12px', fontWeight: 700 }}>- ¥{fmt(bill.amount_paid)}</td>
+                        </tr>
+                      )}
+                      <tr style={{ borderTop: '2px solid #000' }}>
+                        <td style={{ padding: '8px 12px', fontWeight: 800, fontSize: 13, color: '#000' }}>
+                          {(bill.amount_paid || 0) > 0 ? 'BALANCE DUE' : 'GRAND TOTAL'}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 800, fontSize: 13, color: '#000' }}>
+                          ¥{fmt(bill.grand_total - (bill.amount_paid || 0))}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
         </div>
       </div>
@@ -201,27 +209,39 @@ function PrintView({ bill, onClose }) {
         position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
         display: 'flex', gap: 12,
       }}>
-        <button className="btn btn-primary" onClick={handlePrint}>
+        <button className="btn btn-primary" onClick={() => window.print()}>
           🖨️ Print / Save PDF
         </button>
         <button className="btn btn-ghost" onClick={onClose}>✕ Close</button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
 // ── Payment Panel ─────────────────────────────────────────────────────────────
 function PaymentPanel({ bill, onDone }) {
   const alreadyPaid = bill.amount_paid || 0
-  const [mode, setMode]     = useState('add')
-  const [amount, setAmount] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [mode, setMode]         = useState('add')
+  const [amount, setAmount]     = useState('')
+  const [saving, setSaving]     = useState(false)
+  const [payments, setPayments] = useState([])
   const due = bill.grand_total - alreadyPaid
+
+  useEffect(() => {
+    window.trsAPI.getPayments(bill.id).then(setPayments)
+  }, [bill.id])
+
+  function fmtPayDate(iso) {
+    const d = new Date(iso)
+    return d.toLocaleDateString('en', { day: '2-digit', month: 'short', year: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false })
+  }
 
   async function submit(e) {
     e.preventDefault()
     const amt = parseFloat(amount)
-    if (isNaN(amt) || amt < 0) return
+    if (isNaN(amt) || amt <= 0) return
     setSaving(true)
     if (mode === 'correct') {
       await window.trsAPI.correctPayment(bill.id, amt)
@@ -234,6 +254,19 @@ function PaymentPanel({ bill, onDone }) {
 
   return (
     <div style={{ background: 'var(--blue-light)', border: '1px solid #bfdbfe', borderRadius: 8, padding: '12px 16px', marginTop: 8 }}>
+      {/* Payment history */}
+      {payments.length > 0 && (
+        <div style={{ marginBottom: 12, background: '#fff', borderRadius: 6, border: '1px solid #bfdbfe', padding: '8px 12px' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', letterSpacing: 0.5, marginBottom: 6, textTransform: 'uppercase' }}>Payment History</div>
+          {payments.map(p => (
+            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '3px 0', borderBottom: '1px solid #e0f0ff' }}>
+              <span style={{ color: 'var(--muted)' }}>{fmtPayDate(p.paid_at)}{p.note ? <em style={{ marginLeft: 6, color: '#93c5fd' }}>{p.note}</em> : null}</span>
+              <span style={{ fontWeight: 700, color: 'var(--green)' }}>+¥{fmt(p.amount)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {alreadyPaid > 0 && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <button type="button"
@@ -392,9 +425,12 @@ export default function Bills({ onNewBill }) {
   const [search, setSearch]       = useState('')
   const [dateFrom, setDateFrom]   = useState('')
   const [dateTo, setDateTo]       = useState('')
-  const [printBill, setPrintBill] = useState(null)
-  const [payingId, setPayingId]   = useState(null)
-  const [editingId, setEditingId] = useState(null)
+  const [printBillId, setPrintBillId] = useState(null)
+  const [payingId, setPayingId]       = useState(null)
+  const [editingId, setEditingId]     = useState(null)
+
+  // Always derived from live bills state so print view stays fresh after edits
+  const printBill = printBillId ? (bills.find(b => b.id === printBillId) ?? null) : null
 
   useEffect(() => { load() }, [])
 
@@ -435,10 +471,11 @@ export default function Bills({ onNewBill }) {
   })
 
   // Revenue = sum of sub_totals (items only), excluding opening balance and rolled_forward bills
-  const totalRevenue  = bills.filter(b => !b.rolled_forward && b.bill_type !== 'opening_balance').reduce((s, b) => s + (b.sub_total || b.grand_total), 0)
+  const totalRevenue  = bills.filter(b => !b.rolled_forward && b.bill_type !== 'opening_balance').reduce((s, b) => s + (b.sub_total ?? b.grand_total), 0)
   // Due = only active (non-rolled-forward) unpaid bills
   const totalDue      = bills.filter(b => !b.rolled_forward).reduce((s, b) => s + (b.due ?? 0), 0)
-  const paidCount     = bills.filter(b => b.paid && !b.rolled_forward).length
+  const paidCount     = bills.filter(b => b.paid && !b.rolled_forward && b.bill_type !== 'opening_balance').length
+  const unpaidCount   = bills.filter(b => !b.paid && !b.rolled_forward && b.bill_type !== 'opening_balance').length
   const hasFilters    = search || dateFrom || dateTo
 
   function statusBadge(bill) {
@@ -450,7 +487,7 @@ export default function Bills({ onNewBill }) {
 
   return (
     <>
-      {printBill && <PrintView bill={printBill} onClose={() => setPrintBill(null)} />}
+      {printBill && <PrintView bill={printBill} onClose={() => setPrintBillId(null)} />}
 
       {/* Summary strip */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -471,7 +508,7 @@ export default function Bills({ onNewBill }) {
         <div className="stat-card amber" style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 22 }}>⏳</span>
           <div>
-            <div className="stat-value" style={{ color: '#d97706', fontSize: 18 }}>{bills.length - paidCount}</div>
+            <div className="stat-value" style={{ color: '#d97706', fontSize: 18 }}>{unpaidCount}</div>
             <div className="stat-label">Unpaid</div>
           </div>
         </div>
@@ -599,7 +636,7 @@ export default function Bills({ onNewBill }) {
                               ✏️ Edit
                             </button>
                           )}
-                          {!isOB && !isRF && <button className="btn btn-ghost btn-sm" onClick={() => setPrintBill(bill)}>🖨️</button>}
+                          {!isOB && !isRF && <button className="btn btn-ghost btn-sm" onClick={() => setPrintBillId(bill.id)}>🖨️</button>}
                           <button className="btn btn-sm"
                             style={{ background: '#fee2e2', color: 'var(--red)', border: '1px solid #fecaca' }}
                             onClick={() => handleDelete(bill)}>

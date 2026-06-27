@@ -6,8 +6,9 @@ const { app } = require('electron')
 const dbPath = path.join(app.getPath('userData'), 'trs.db')
 const db = new Database(dbPath)
 
-// Enable WAL mode for better performance
+// Enable WAL mode and foreign key enforcement
 db.pragma('journal_mode = WAL')
+db.pragma('foreign_keys = ON')
 
 // Migrations – add columns that may not exist in older databases
 try { db.exec(`ALTER TABLE bills ADD COLUMN discount REAL DEFAULT 0`) } catch (_) {}
@@ -81,6 +82,15 @@ db.exec(`
     note TEXT DEFAULT '',
     date TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bill_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    paid_at TEXT NOT NULL,
+    note TEXT DEFAULT '',
+    FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
   );
 `)
 
@@ -191,15 +201,6 @@ function createBill(billData, items) {
       if (item.product_id) adjustStock(item.product_id, item.quantity)
     })
 
-    // Mark all previously unpaid bills for this customer as rolled_forward
-    // (their debt is now consolidated into this new bill)
-    if ((billData.previous_due || 0) > 0) {
-      db.prepare(`
-        UPDATE bills SET rolled_forward = 1
-        WHERE customer_name = ? AND paid = 0 AND id != ? AND rolled_forward = 0
-      `).run(billData.customer_name, billId)
-    }
-
     // Apply initial payment (paid_on_invoice) to this bill only
     if ((billData.paid_on_invoice || 0) > 0) {
       const apply = Math.min(billData.paid_on_invoice, storedGrandTotal)
@@ -216,11 +217,15 @@ function createBill(billData, items) {
 function toggleBillPaid(id, paid) {
   const bill = db.prepare('SELECT grand_total, amount_paid FROM bills WHERE id=?').get(id)
   if (paid) {
+    const remaining = bill.grand_total - (bill.amount_paid || 0)
     db.prepare('UPDATE bills SET paid=1, amount_paid=? WHERE id=?').run(bill.grand_total, id)
+    if (remaining > 0) {
+      db.prepare('INSERT INTO payments (bill_id, amount, paid_at, note) VALUES (?, ?, ?, ?)').run(id, remaining, new Date().toISOString(), 'Full payment')
+    }
   } else {
-    // Preserve any partial payment already recorded — only clear if it was a full toggle-pay
-    const keepPaid = (bill.amount_paid || 0) < bill.grand_total ? (bill.amount_paid || 0) : 0
-    db.prepare('UPDATE bills SET paid=0, amount_paid=? WHERE id=?').run(keepPaid, id)
+    // Clear payment history and reset amount when unmarking as paid
+    db.prepare('DELETE FROM payments WHERE bill_id=?').run(id)
+    db.prepare('UPDATE bills SET paid=0, amount_paid=0 WHERE id=?').run(id)
   }
 }
 
@@ -229,7 +234,12 @@ function recordPayment(id, amount) {
   const newAmountPaid = Math.min((bill.amount_paid || 0) + amount, bill.grand_total)
   const isPaid = newAmountPaid >= bill.grand_total ? 1 : 0
   db.prepare('UPDATE bills SET amount_paid=?, paid=? WHERE id=?').run(newAmountPaid, isPaid, id)
+  db.prepare('INSERT INTO payments (bill_id, amount, paid_at) VALUES (?, ?, ?)').run(id, amount, new Date().toISOString())
   return { amount_paid: newAmountPaid, due: bill.grand_total - newAmountPaid, paid: isPaid }
+}
+
+function getPayments(billId) {
+  return db.prepare('SELECT * FROM payments WHERE bill_id=? ORDER BY paid_at ASC').all(billId)
 }
 
 function correctPayment(id, newTotal) {
@@ -483,15 +493,18 @@ function updateCustomer(data) {
           notes=@notes, opening_balance=@opening_balance
       WHERE id=@id
     `).run(data)
-    // Sync the opening balance bill
-    const obBill = db.prepare(`SELECT * FROM bills WHERE bill_type='opening_balance' AND customer_name=?`).get(old.name)
+    // Rename ALL bills (invoices + OB) when customer name changes
+    if (data.name !== old.name) {
+      db.prepare('UPDATE bills SET customer_name=? WHERE customer_name=?').run(data.name, old.name)
+    }
+    // Sync the opening balance bill (search by new name since we already renamed above)
+    const obBill = db.prepare(`SELECT * FROM bills WHERE bill_type='opening_balance' AND customer_name=?`).get(data.name)
     if ((data.opening_balance || 0) > 0) {
       if (obBill) {
-        // Update existing OB bill (recalculate paid status, update customer name if changed)
         const newPaid = Math.min(obBill.amount_paid || 0, data.opening_balance)
         const isPaid = newPaid >= data.opening_balance ? 1 : 0
-        db.prepare(`UPDATE bills SET customer_name=?, grand_total=?, sub_total=?, amount_paid=?, paid=? WHERE id=?`)
-          .run(data.name, data.opening_balance, data.opening_balance, newPaid, isPaid, obBill.id)
+        db.prepare(`UPDATE bills SET grand_total=?, sub_total=?, amount_paid=?, paid=? WHERE id=?`)
+          .run(data.opening_balance, data.opening_balance, newPaid, isPaid, obBill.id)
       } else {
         db.prepare(`
           INSERT INTO bills (bill_number, customer_name, bill_type, sub_total, grand_total, amount_paid, paid, created_at, tax_rate, discount, tax_amount)
@@ -499,26 +512,22 @@ function updateCustomer(data) {
         `).run(`OB-${data.id}`, data.name, data.opening_balance, data.opening_balance)
       }
     } else if (obBill && !obBill.paid) {
-      // opening_balance cleared — delete the unpaid OB bill
       db.prepare('DELETE FROM bills WHERE id=?').run(obBill.id)
-    } else if (obBill && data.name !== old.name) {
-      // Just rename if already paid
-      db.prepare('UPDATE bills SET customer_name=? WHERE id=?').run(data.name, obBill.id)
     }
   })
   return transaction()
 }
 
 function deleteCustomer(id) {
-  return db.prepare('DELETE FROM customers WHERE id=?').run(id)
-}
-
-function payOpeningBalance(id, amount) {
-  const cust = db.prepare('SELECT opening_balance, opening_balance_paid FROM customers WHERE id=?').get(id)
-  const remaining = (cust.opening_balance || 0) - (cust.opening_balance_paid || 0)
-  const newPaid = Math.min((cust.opening_balance_paid || 0) + amount, cust.opening_balance || 0)
-  db.prepare('UPDATE customers SET opening_balance_paid=? WHERE id=?').run(newPaid, id)
-  return { opening_balance_paid: newPaid, remaining: remaining - amount }
+  const transaction = db.transaction(() => {
+    const cust = db.prepare('SELECT name FROM customers WHERE id=?').get(id)
+    if (cust) {
+      // Deleting bills cascades to bill_items and payments (foreign_keys = ON)
+      db.prepare('DELETE FROM bills WHERE customer_name=?').run(cust.name)
+    }
+    db.prepare('DELETE FROM customers WHERE id=?').run(id)
+  })
+  return transaction()
 }
 
 // ── EXPENSE QUERIES ───────────────────────────────────────────────────────────
@@ -607,8 +616,8 @@ module.exports = {
   getAllProducts, addProduct, updateProduct, deleteProduct, importProducts,
   importCustomers,
   getAllBills, createBill, updateBill, toggleBillPaid, recordPayment, correctPayment, deleteBill,
-  getCustomerOutstanding,
+  getPayments, getCustomerOutstanding,
   getDashboardStats,
-  getAllCustomers, addCustomer, updateCustomer, deleteCustomer, payOpeningBalance,
+  getAllCustomers, addCustomer, updateCustomer, deleteCustomer,
   getAllExpenses, addExpense, updateExpense, deleteExpense,
 }

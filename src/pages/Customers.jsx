@@ -97,8 +97,12 @@ export default function Customers() {
 
   async function handleDelete(c) {
     if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return
-    await window.trsAPI.deleteCustomer(c.id)
-    flash(`"${c.name}" removed.`)
+    try {
+      await window.trsAPI.deleteCustomer(c.id)
+      flash(`"${c.name}" removed.`)
+    } catch (err) {
+      flash(`Could not delete "${c.name}": ${err?.message || 'Unknown error'}`, 'error')
+    }
     load()
   }
 

@@ -101,8 +101,8 @@ ipcMain.handle('update-customer',        (_, data)    => db.updateCustomer(data)
 ipcMain.handle('delete-customer',        (_, id)      => db.deleteCustomer(id))
 
 ipcMain.handle('record-payment',           (_, id, amt) => db.recordPayment(id, amt))
+ipcMain.handle('get-payments',             (_, billId)  => db.getPayments(billId))
 ipcMain.handle('get-customer-outstanding', (_, name)  => db.getCustomerOutstanding(name))
-ipcMain.handle('pay-opening-balance',      (_, id, amt) => db.payOpeningBalance(id, amt))
 
 ipcMain.handle('get-expenses',    ()           => db.getAllExpenses())
 ipcMain.handle('add-expense',    (_, data)    => db.addExpense(data))

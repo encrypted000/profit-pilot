@@ -10,7 +10,7 @@ export default function NewBill({ onSaved }) {
   const [customers, setCustomers]   = useState([])
   const [custSearch, setCustSearch]       = useState('')
   const [showDropdown, setShowDropdown]   = useState(false)
-  const [customer, setCustomer]           = useState({ name: '', address: '', phone: '' })
+  const [customer, setCustomer]           = useState({ name: '', address: '', phone: '', opening_balance: '' })
   const [outstanding, setOutstanding]     = useState(null)  // { total_due, bill_count }
   const [items, setItems]           = useState([])
   const [discount, setDiscount]     = useState(0)
@@ -48,7 +48,7 @@ export default function NewBill({ onSaved }) {
   }
 
   function clearCustomer() {
-    setCustomer({ name: '', address: '', phone: '' })
+    setCustomer({ name: '', address: '', phone: '', opening_balance: '' })
     setCustSearch('')
     setOutstanding(null)
     setPaidToday('')
@@ -131,6 +131,21 @@ export default function NewBill({ onSaved }) {
     if (items.length === 0)    { flash('Add at least one item.'); return }
 
     setSaving(true)
+
+    // Auto-save new customers to the customers table
+    const nameLC = customer.name.trim().toLowerCase()
+    const alreadyExists = customers.some(c => c.name.toLowerCase() === nameLC)
+    if (!alreadyExists) {
+      await window.trsAPI.addCustomer({
+        name: customer.name.trim(),
+        address: customer.address || '',
+        phone: customer.phone || '',
+        email: '',
+        notes: '',
+        opening_balance: parseFloat(customer.opening_balance) || 0,
+      })
+    }
+
     const bills = await window.trsAPI.getBills()
     const maxNum = bills
       .filter(b => /^INV-\d+$/.test(b.bill_number))
@@ -269,6 +284,21 @@ export default function NewBill({ onSaved }) {
                   onChange={e => setBillDate(e.target.value)} />
               </div>
             </div>
+            {/* Opening balance — only for new customers not yet in the system */}
+            {!outstanding && (
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Opening Balance (¥) <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: 11 }}>(if they owe from before)</span></label>
+                <input className="form-control" type="number"
+                  value={customer.opening_balance}
+                  onChange={e => setCustomer(c => ({ ...c, opening_balance: e.target.value }))}
+                  placeholder="0" />
+                {parseFloat(customer.opening_balance) > 0 && (
+                  <div style={{ fontSize: 12, color: 'var(--amber)', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 6, padding: '5px 10px', marginTop: 6 }}>
+                    📋 A "Prior Balance" entry of ¥{Number(parseFloat(customer.opening_balance)).toLocaleString('ja-JP')} will be added to Bills.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
